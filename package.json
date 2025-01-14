@@ -1,0 +1,22 @@
+{
+  "name": "dni-article-checker",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "start": "wrangler dev",
+    "test": "vitest",
+    "test:watch": "vitest watch"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.4",
+    "vitest": "^1.2.2",
+    "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.17.1",
+    "@octokit/rest": "^20.0.2"
+  }
+}
