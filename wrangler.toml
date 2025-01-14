@@ -1,24 +1,12 @@
 name = "dni-article-checker"
-main = "src/index.ts"
-compatibility_date = "2025-01-09"
-compatibility_flags = ["nodejs_compat_v2"]
+main = "./cloudflare-worker/index.ts"
+compatibility_date = "2024-01-14"
+compatibility_flags = ["nodejs_compat"]
 
-# KV Namespace for state management
-[[kv_namespaces]]
-binding = "PR_STATE"
-id = "PR_STATE_ID" # You'll need to replace this with actual KV namespace ID
+kv_namespaces = [
+  { binding = "PR_STATE", id = "6e833b4dffaa41ef925cde46f134f928" }
+]
 
-# Queue for processing jobs
-[[queues.producers]]
-binding = "PR_QUEUE"
-queue = "pr-processing-queue"
-
-[[queues.consumers]]
-queue = "pr-processing-queue"
-max_batch_size = 10
-max_batch_timeout = 30
-
-# Environment variables
 [vars]
 ENVIRONMENT = "production"
 
@@ -31,7 +19,6 @@ type = "ESModule"
 globs = ["**/*.js"]
 
 # Secrets that need to be set using `wrangler secret put`:
-# - GITHUB_TOKEN
+# - PAT_TOKEN
 # - WEBHOOK_SECRET
-# - CLAUDE_API_KEY
-# - BRAVE_SEARCH_API_KEY 
+# - CLAUDE_API_KEY 

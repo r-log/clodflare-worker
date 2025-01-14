@@ -10,8 +10,10 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240208.0",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.4",
+    "@types/crypto-js": "^4.2.2",
+    "@types/node": "^20.17.13",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3",
     "vitest": "^1.2.2",
     "wrangler": "^3.0.0"
   },

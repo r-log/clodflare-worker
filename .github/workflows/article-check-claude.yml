@@ -8,41 +8,40 @@ permissions:
   pull-requests: write
 
 jobs:
-  permission-check-job:
+  article-check:
     runs-on: ubuntu-latest
+    name: "Article Quality Check"
     if: |
       github.event.issue.pull_request &&
       contains(github.event.comment.body, '/articlecheck')
-    outputs:
-      permission: ${{ steps.permissions-check.outputs.defined }}
     steps:
-      - name: Check for Secret availability
-        id: permissions-check
+      - name: Check Permissions
+        id: check-permissions
         shell: bash
         run: |
-          echo "defined=${{ contains(fromJSON(secrets.WIKI_REVIEWERS), github.actor) }}" >> $GITHUB_OUTPUT;
+          if [[ "${{ contains(fromJSON(secrets.WIKI_REVIEWERS), github.actor) }}" == "true" ]]; then
+            echo "authorized=true" >> $GITHUB_OUTPUT
+          else
+            echo "Sorry, only authorized reviewers can trigger article checks." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
 
-  fact-check:
-    runs-on: ubuntu-latest
-    name: "Checks a new article from a PR, conducting fact-checking, spell-checking, and ensuring compliance with the submission guidelines"
-    needs: [ permission-check-job ]
-    if: needs.permission-check-job.outputs.permission == 'true'
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Cache Python
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Install package
-        run: pipx install poetry && poetry install --no-interaction
-
-      - name: Run script
+      - name: Generate Request Signature
+        id: signature
+        env:
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          PAYLOAD: ${{ toJSON(github.event) }}
         run: |
-          poetry run article-check-claude \
-            --pull-url "${{ github.event.issue.pull_request.url }}" \
-            --github-token "${{ secrets.GITHUB_TOKEN }}" \
-            --llm-api-key "${{ secrets.LLM_API_KEY }}" \
-            --search-api-key "${{ secrets.SEARCH_API_KEY }}"
+          echo "signature=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" -hex | sed 's/^.* //')" >> $GITHUB_OUTPUT
+
+      - name: Trigger Article Check
+        if: steps.check-permissions.outputs.authorized == 'true'
+        env:
+          PAYLOAD: ${{ toJSON(github.event) }}
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: issue_comment" \
+            -H "X-Hub-Signature-256: sha256=${{ steps.signature.outputs.signature }}" \
+            -d "$PAYLOAD" \
+            https://dni-article-checker.institute-dni.workers.dev
